@@ -18,8 +18,8 @@
 <h2>Registro de Nuevo Ingreso</h2>
 
 <div style="text-align: center;">
-  <button id="btn-escanear"> Escanear CURP</button>
-  <button id="btn-detener" style="display: none;"> Detener escaneo</button>
+  <button id="btn-escanear">📷 Escanear CURP</button>
+  <button id="btn-detener" style="display: none;">❌ Detener escaneo</button>
 </div>
 
 <div id="reader"></div>
@@ -52,7 +52,7 @@
     <option value="Sí">Sí</option>
   </select>
 
-  <button type="submit"> Guardar registro</button>
+  <button type="submit">✅ Guardar registro</button>
 </form>
 
 <script>
@@ -86,27 +86,36 @@
     btnDetener.style.display = "inline-block";
     qrScanner = new Html5Qrcode("reader");
 
-    Html5Qrcode.getCameras().then(devices => {
-      if (devices && devices.length) {
-        let rearCamera = devices.find(device => device.label.toLowerCase().includes("back")) || devices[0];
-        if (!rearCamera) alert("No se detectó cámara trasera. Se usará la disponible.");
-        qrScanner.start(
-          rearCamera.id,
-          { fps: 10, qrbox: 250 },
-          qrCodeMessage => {
-            if (!document.getElementById("curp").value) {
-              document.getElementById("curp").value = qrCodeMessage;
-              qrScanner.stop().then(() => {
-                readerDiv.style.display = "none";
-                btnDetener.style.display = "none";
-              });
-            }
-          },
-          errorMessage => { /* Errores ignorados por ahora */ }
-        );
-      } else {
-        alert("No se detectaron cámaras en este dispositivo.");
+    const config = {
+      fps: 10,
+      qrbox: 250,
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true
+      },
+      videoConstraints: {
+        facingMode: "environment" // 👈 Este es el truco
       }
+    };
+
+    qrScanner.start(
+      { facingMode: "environment" },
+      config,
+      qrCodeMessage => {
+        if (!document.getElementById("curp").value) {
+          document.getElementById("curp").value = qrCodeMessage;
+          qrScanner.stop().then(() => {
+            readerDiv.style.display = "none";
+            btnDetener.style.display = "none";
+          });
+        }
+      },
+      errorMessage => {
+        // console.log(errorMessage);
+      }
+    ).catch(err => {
+      alert("No se pudo acceder a la cámara trasera. Intenta manualmente.");
+      readerDiv.style.display = "none";
+      btnDetener.style.display = "none";
     });
   });
 
