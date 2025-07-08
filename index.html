@@ -88,18 +88,43 @@
 
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length > 0) {
-        // Buscar la cámara trasera por nombre
         const backCamera = devices.find(device =>
           device.label.toLowerCase().includes("back") ||
           device.label.toLowerCase().includes("rear") ||
           device.label.toLowerCase().includes("trasera")
-        ) || devices[devices.length - 1]; // Último por si no detecta bien
+        ) || devices[devices.length - 1];
 
         qrScanner.start(
           { deviceId: { exact: backCamera.id } },
           { fps: 10, qrbox: 250 },
           qrCodeMessage => {
-            document.getElementById("curp").value = qrCodeMessage;
+            const partes = qrCodeMessage.split("|");
+
+            if (partes.length >= 9) {
+              const curp = partes[0].trim();
+              const apellidoPaterno = partes[2].trim();
+              const apellidoMaterno = partes[3].trim();
+              const nombres = partes[4].trim();
+              const sexo = partes[5].trim();
+              const fechaNac = partes[6].trim();
+
+              // Calcular edad
+              const hoy = new Date();
+              const nacimiento = new Date(fechaNac.split("/").reverse().join("-"));
+              let edad = hoy.getFullYear() - nacimiento.getFullYear();
+              const mes = hoy.getMonth() - nacimiento.getMonth();
+              if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+                edad--;
+              }
+
+              document.getElementById("curp").value = curp;
+              document.getElementById("nombre").value = `${apellidoPaterno} ${apellidoMaterno} ${nombres}`;
+              document.getElementById("sexo").value = sexo.charAt(0).toUpperCase() + sexo.slice(1).toLowerCase();
+              document.getElementById("edad").value = edad;
+            } else {
+              alert("El QR escaneado no tiene el formato esperado.");
+            }
+
             qrScanner.stop().then(() => {
               readerDiv.style.display = "none";
               btnDetener.style.display = "none";
