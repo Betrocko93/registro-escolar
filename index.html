@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro de Inscripción - Escaneo CURP</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    h2 { color: #333; }
+    input, select, button { margin: 5px 0; padding: 8px; width: 100%; }
+    form { background: white; padding: 20px; border-radius: 8px; max-width: 500px; margin: auto; }
+    #reader { width: 100%; margin: auto; }
+  </style>
+</head>
+<body><h2>Registro de Nuevo Ingreso</h2>
+<div id="reader"></div><form id="registroForm">
+  <label>Nombre del alumno:</label>
+  <input type="text" id="nombre" required><label>CURP:</label> <input type="text" id="curp" required>
+
+<label>Sexo:</label> <select id="sexo"> <option value="Hombre">Hombre</option> <option value="Mujer">Mujer</option> </select>
+
+<label>Edad:</label> <input type="number" id="edad" required>
+
+<label>Promedio de primaria:</label> <input type="number" step="0.1" id="promedio" required>
+
+<label>Escuela de procedencia:</label> <input type="text" id="escuela" required>
+
+<label>¿Tiene alguna discapacidad?</label> <select id="discapacidad"> <option value="No">No</option> <option value="Sí">Sí</option> </select>
+
+<button type="submit">Guardar registro</button>
+
+</form><script>
+  const form = document.getElementById("registroForm");
+
+  // Guardar datos en localStorage por ahora (se puede conectar a Sheets luego)
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const datos = {
+      nombre: document.getElementById("nombre").value,
+      curp: document.getElementById("curp").value,
+      sexo: document.getElementById("sexo").value,
+      edad: document.getElementById("edad").value,
+      promedio: document.getElementById("promedio").value,
+      escuela: document.getElementById("escuela").value,
+      discapacidad: document.getElementById("discapacidad").value,
+      timestamp: new Date().toISOString()
+    };
+    const registros = JSON.parse(localStorage.getItem("registros")) || [];
+    registros.push(datos);
+    localStorage.setItem("registros", JSON.stringify(registros));
+    alert("¡Registro guardado correctamente!");
+    form.reset();
+  });
+
+  // Inicializar el escáner de QR
+  const qrScanner = new Html5Qrcode("reader");
+  Html5Qrcode.getCameras().then(devices => {
+    if (devices && devices.length) {
+      qrScanner.start(
+        devices[0].id,
+        { fps: 10, qrbox: 250 },
+        qrCodeMessage => {
+          // Aquí puedes parsear datos del CURP si el QR contiene texto, no solo URL
+          if (!document.getElementById("curp").value) {
+            document.getElementById("curp").value = qrCodeMessage;
+            qrScanner.stop();
+          }
+        },
+        errorMessage => { /* Ignorar errores */ }
+      );
+    }
+  });
+</script></body>
+</html>
