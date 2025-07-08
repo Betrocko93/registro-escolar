@@ -86,36 +86,32 @@
     btnDetener.style.display = "inline-block";
     qrScanner = new Html5Qrcode("reader");
 
-    const config = {
-      fps: 10,
-      qrbox: 250,
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true
-      },
-      videoConstraints: {
-        facingMode: "environment" // 👈 Este es el truco
-      }
-    };
+    Html5Qrcode.getCameras().then(devices => {
+      if (devices && devices.length > 0) {
+        // Buscar la cámara trasera por nombre
+        const backCamera = devices.find(device =>
+          device.label.toLowerCase().includes("back") ||
+          device.label.toLowerCase().includes("rear") ||
+          device.label.toLowerCase().includes("trasera")
+        ) || devices[devices.length - 1]; // Último por si no detecta bien
 
-    qrScanner.start(
-      { facingMode: "environment" },
-      config,
-      qrCodeMessage => {
-        if (!document.getElementById("curp").value) {
-          document.getElementById("curp").value = qrCodeMessage;
-          qrScanner.stop().then(() => {
-            readerDiv.style.display = "none";
-            btnDetener.style.display = "none";
-          });
-        }
-      },
-      errorMessage => {
-        // console.log(errorMessage);
+        qrScanner.start(
+          { deviceId: { exact: backCamera.id } },
+          { fps: 10, qrbox: 250 },
+          qrCodeMessage => {
+            document.getElementById("curp").value = qrCodeMessage;
+            qrScanner.stop().then(() => {
+              readerDiv.style.display = "none";
+              btnDetener.style.display = "none";
+            });
+          },
+          errorMessage => { /* ignorar */ }
+        ).catch(err => {
+          alert("Error al iniciar cámara: " + err);
+        });
+      } else {
+        alert("No se detectaron cámaras en este dispositivo.");
       }
-    ).catch(err => {
-      alert("No se pudo acceder a la cámara trasera. Intenta manualmente.");
-      readerDiv.style.display = "none";
-      btnDetener.style.display = "none";
     });
   });
 
